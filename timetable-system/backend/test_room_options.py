@@ -29,7 +29,7 @@ async def run_checks():
                 single = await validate_schedule(ValidateRequest(
                     **req.model_dump(), room_id=result.room_id,
                 ), session)
-                assert result.model_dump(exclude={'room_id'}) == single.model_dump()
+                assert result.model_dump(include={'is_valid', 'errors', 'warnings'}) == single.model_dump()
 
     req = RoomOptionsRequest(academic_load_id=load_ids[0], day_of_week=1, time_slot_id=slot_id)
     async def count_queries():

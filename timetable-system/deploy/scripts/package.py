@@ -28,7 +28,7 @@ def files(root, relative):
 
 with tarfile.open(archive, 'w:gz') as bundle:
     for root, name, selections in (
-        (staff, 'timetable-system', ['README.md', 'deploy', 'backend/database', 'frontend/src', 'frontend/public']),
+        (staff, 'timetable-system', ['README.md', 'deploy', 'backend/database', 'backend/templates', 'frontend/src', 'frontend/public']),
         (student, 'UTB2', ['README.md', 'backend/app', 'frontend/src', 'frontend/public']),
     ):
         candidates = set()

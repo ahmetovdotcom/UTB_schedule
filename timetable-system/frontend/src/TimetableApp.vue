@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useScheduleStore } from './stores/schedule'
 import PublishSchedule from './components/PublishSchedule.vue'
+import ExportSchedule from './components/ExportSchedule.vue'
 import AutoGenerateReport from './components/AutoGenerateReport.vue'
 import EntitySearch from './components/EntitySearch.vue'
 import LoadPool from './components/LoadPool.vue'
@@ -104,6 +105,7 @@ async function onAutoGenerate() {
       </template>
     </header>
     <PublishSchedule />
+    <ExportSchedule />
 
     <div v-if="store.error" class="bg-red-50 text-red-700 text-sm px-3 py-2 border-b border-red-200">
       {{ store.error }}

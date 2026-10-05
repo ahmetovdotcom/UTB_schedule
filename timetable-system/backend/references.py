@@ -68,6 +68,7 @@ class GroupIn(BaseModel):
     code: str
     students_count: int
     course: int
+    department_id: int | None = None
 
 
 class SubjectIn(BaseModel):
@@ -130,7 +131,7 @@ async def update_department(
 
 @router.delete("/api/departments/{department_id}", status_code=204)
 async def delete_department(department_id: int, session: AsyncSession = Depends(get_session)):
-    """Rooms and teachers of the department stay, just without a department."""
+    """Rooms, teachers and groups stay, just without a department."""
     department = await session.get(Department, department_id)
     if department is None:
         raise HTTPException(404, "Кафедра не найдена")
@@ -139,6 +140,9 @@ async def delete_department(department_id: int, session: AsyncSession = Depends(
     )
     await session.execute(
         sa_update(Teacher).where(Teacher.department_id == department_id).values(department_id=None)
+    )
+    await session.execute(
+        sa_update(StudentGroup).where(StudentGroup.department_id == department_id).values(department_id=None)
     )
     await session.delete(department)
     await session.commit()
@@ -328,6 +332,7 @@ async def delete_subject(subject_id: int, session: AsyncSession = Depends(get_se
 
 @router.post("/api/groups")
 async def create_group(data: GroupIn, session: AsyncSession = Depends(get_session)):
+    await get_department_or_404(session, data.department_id)
     group = StudentGroup(**data.model_dump())
     session.add(group)
     await session.commit()
@@ -337,6 +342,7 @@ async def create_group(data: GroupIn, session: AsyncSession = Depends(get_sessio
 
 @router.put("/api/groups/{group_id}")
 async def update_group(group_id: int, data: GroupIn, session: AsyncSession = Depends(get_session)):
+    await get_department_or_404(session, data.department_id)
     group = await session.get(StudentGroup, group_id)
     if group is None:
         raise HTTPException(404, "Группа не найдена")

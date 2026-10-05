@@ -76,6 +76,8 @@ class StudentGroup(Base):
     publication_key: Mapped[str] = mapped_column(default=lambda: str(uuid4()))
     students_count: Mapped[int]
     course: Mapped[int]
+    department_id: Mapped[int | None] = mapped_column(ForeignKey("departments.id"))
+    department: Mapped["Department | None"] = relationship()
 
 
 class Subject(Base):
@@ -162,6 +164,8 @@ def _create_and_migrate(sync_conn) -> None:
     # create_all doesn't add columns to existing tables — bring an older
     # timetable.db up to date without losing its data.
     migrate(execute)
+    from database.group_department_migration import migrate_group_department
+    migrate_group_department(execute)
 
 
 async def init_db() -> None:

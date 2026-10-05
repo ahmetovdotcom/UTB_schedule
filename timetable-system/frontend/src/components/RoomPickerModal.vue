@@ -12,6 +12,7 @@ const store = useScheduleStore()
 const roomResults = ref([]) // [{ room, status: 'ok' | 'warn' | 'error', messages: [] }]
 const loadingRooms = ref(false)
 const roomsError = ref('')
+const saving = ref(false)
 
 const load = computed(() => (props.request ? store.loadById(props.request.loadId) : null))
 const dayLabel = computed(() => DAYS.find((d) => d.value === props.request?.day)?.label ?? '')
@@ -32,6 +33,9 @@ watch(
       const roomsById = new Map(store.rooms.map((room) => [room.id, room]))
       const results = validations.filter((data) => roomsById.has(data.room_id)).map((data) => ({
         room: roomsById.get(data.room_id),
+        streamItemId: data.stream_item_id,
+        streamGroupIds: data.stream_group_ids,
+        studentsTotal: data.students_total,
         status: !data.is_valid ? 'error' : data.warnings.length ? 'warn' : 'ok',
         messages: [...data.errors, ...data.warnings],
       }))
@@ -58,7 +62,9 @@ function close() {
 }
 
 async function pickRoom(result) {
-  if (result.status === 'error' || !props.request) return
+  if (result.status === 'error' || !props.request || saving.value) return
+  saving.value = true
+  roomsError.value = ''
   try {
     await store.assign({
       loadId: props.request.loadId,
@@ -66,11 +72,13 @@ async function pickRoom(result) {
       day: props.request.day,
       timeSlotId: props.request.slotId,
       roomId: result.room.id,
+      streamItemId: result.streamItemId,
     })
     close()
   } catch {
-    // store.error is set and shown by the parent's error banner; keep the
-    // modal open so the user can pick a different room.
+    roomsError.value = store.error
+  } finally {
+    saving.value = false
   }
 }
 
@@ -99,6 +107,12 @@ watch(
           {{ dayLabel }}, {{ slot?.slot_number }} пара ({{ slot?.start_time }}–{{ slot?.end_time }}) ·
           {{ load?.students_total }} студ.
         </p>
+        <p v-if="load?.group_ids.length > 1" class="text-xs text-gray-600 mt-1">
+          Поток: {{ store.groupCodes(load.group_ids) }}
+        </p>
+        <p class="text-xs text-gray-500 mt-1">
+          Если мест не хватает, появится предупреждение. Выбрать аудиторию всё равно можно.
+        </p>
         <p v-if="load?.room_type" class="text-xs text-gray-500">
           Нужно помещение: {{ store.roomTypeLabel(load.room_type) }}
         </p>
@@ -109,7 +123,7 @@ watch(
         <button
           v-for="result in roomResults"
           :key="result.room.id"
-          :disabled="result.status === 'error'"
+          :disabled="saving || result.status === 'error'"
           class="w-full text-left rounded-md p-2 border text-sm flex flex-col gap-0.5 transition-colors"
           :class="{
             'border-green-300 bg-green-50 hover:bg-green-100 cursor-pointer': result.status === 'ok',
@@ -127,6 +141,11 @@ watch(
               </span>
             </span>
             <span class="shrink-0">{{ result.room.capacity }} мест · {{ result.room.floor }} этаж</span>
+          </div>
+          <div v-if="result.streamItemId" class="text-xs font-medium">
+            Объединить в поток: {{ store.groupCodes(result.streamGroupIds) }}
+            · {{ result.studentsTotal }} студ.
+            <span class="block font-normal">Объединится только эта пара. Остальные часы останутся отдельно.</span>
           </div>
           <div v-if="result.room.department_name" class="text-[11px] text-gray-500">
             {{ result.room.department_name }}

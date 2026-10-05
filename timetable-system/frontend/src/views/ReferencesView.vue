@@ -62,6 +62,7 @@ const groupFields = [
   { key: 'code', label: 'Код', type: 'text' },
   { key: 'students_count', label: 'Студентов', type: 'number' },
   { key: 'course', label: 'Курс', type: 'number' },
+  { key: 'department_id', label: 'Кафедра', type: 'select', nullable: true, options: departmentOptions },
 ]
 
 const subjectFields = [{ key: 'name', label: 'Название', type: 'text' }]

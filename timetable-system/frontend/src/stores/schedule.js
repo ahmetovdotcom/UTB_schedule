@@ -196,9 +196,10 @@ export const useScheduleStore = defineStore('schedule', () => {
 
   // --- mutations -----------------------------------------------------
 
-  async function assign({ loadId, itemId, day, timeSlotId, roomId }) {
+  async function assign({ loadId, itemId, day, timeSlotId, roomId, streamItemId }) {
     try {
-      await axios.post('/api/schedule/assign', {
+      const { data } = await axios.post(streamItemId ? '/api/schedule/join-stream' : '/api/schedule/assign', {
+        ...(streamItemId ? { target_item_id: streamItemId } : {}),
         academic_load_id: loadId,
         day_of_week: day,
         time_slot_id: timeSlotId,
@@ -206,11 +207,11 @@ export const useScheduleStore = defineStore('schedule', () => {
         current_item_id: itemId,
       })
       error.value = ''
-      info.value = ''
+      info.value = data.warnings?.length ? `Занятие добавлено. ${data.warnings.join('; ')}` : ''
       await load()
     } catch (e) {
       const detail = e.response?.data?.detail
-      error.value = detail?.errors?.join('; ') || 'Не удалось поставить пару'
+      error.value = (typeof detail === 'string' ? detail : detail?.errors?.join('; ')) || 'Не удалось поставить пару'
       throw e
     }
   }

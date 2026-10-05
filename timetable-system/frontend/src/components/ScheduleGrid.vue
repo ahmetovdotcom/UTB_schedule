@@ -110,6 +110,7 @@ const typeColors = {
 function itemSubtitle(item) {
   const load = store.loadById(item.academic_load_id)
   if (!load) return ''
+  if (load.group_ids.length > 1) return `Поток: ${store.groupCodes(load.group_ids)}`
   if (store.viewMode === 'teacher') return store.groupCodes(load.group_ids)
   return store.teacherById(load.teacher_id)?.full_name ?? ''
 }
@@ -180,7 +181,7 @@ function itemSubtitle(item) {
                   </span>
                   <span class="text-gray-400 truncate">{{ store.roomLabel(store.roomById(cell.item.room_id)) }}</span>
                 </div>
-                <div class="text-gray-500 truncate">{{ itemSubtitle(cell.item) }}</div>
+                <div class="text-gray-500 truncate" :title="itemSubtitle(cell.item)">{{ itemSubtitle(cell.item) }}</div>
               </div>
             </div>
             <div

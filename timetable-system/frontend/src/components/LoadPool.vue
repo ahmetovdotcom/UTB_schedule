@@ -49,6 +49,7 @@ function onDragEnd() {
         {{ store.teacherById(loadItem.teacher_id)?.full_name }}
       </div>
       <div class="text-xs text-gray-500">
+        <span v-if="loadItem.group_ids.length > 1" class="font-medium">Поток: </span>
         {{ store.groupCodes(loadItem.group_ids) }} · {{ loadItem.students_total }} студ.
       </div>
       <div v-if="loadItem.room_type" class="text-xs text-gray-500">
