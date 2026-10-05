@@ -1,0 +1,9 @@
+*
+!requirements.txt
+!*.py
+!database/
+!database/**
+test*.py
+**/__pycache__/
+**/*.pyc
+.env*

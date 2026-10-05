@@ -1,0 +1,125 @@
+<script setup>
+import { computed, onMounted, ref } from 'vue'
+import { useScheduleStore } from './stores/schedule'
+import PublishSchedule from './components/PublishSchedule.vue'
+import AutoGenerateReport from './components/AutoGenerateReport.vue'
+import EntitySearch from './components/EntitySearch.vue'
+import LoadPool from './components/LoadPool.vue'
+import ScheduleGrid from './components/ScheduleGrid.vue'
+import RoomPickerModal from './components/RoomPickerModal.vue'
+import ReferencesView from './views/ReferencesView.vue'
+
+const store = useScheduleStore()
+const modalRequest = ref(null) // { loadId, itemId, day, slotId } | null
+const page = ref('schedule') // 'schedule' | 'references'
+const generating = ref(false)
+
+const searchPlaceholder = computed(
+  () =>
+    ({
+      group: 'Поиск группы…',
+      room: 'Поиск аудитории (блок, номер, тип)…',
+      teacher: 'Поиск преподавателя…',
+    })[store.viewMode],
+)
+
+onMounted(() => {
+  store.load().catch(() => {})
+})
+
+function onDropRequest(request) {
+  modalRequest.value = request
+}
+function closeModal() {
+  modalRequest.value = null
+}
+
+async function onAutoGenerate() {
+  if (!confirm('Стереть текущую расстановку и составить расписание заново?')) return
+  generating.value = true
+  try {
+    await store.autoGenerate()
+  } catch {
+    // store.error already set
+  } finally {
+    generating.value = false
+  }
+}
+</script>
+
+<template>
+  <div class="h-full flex flex-col bg-white">
+    <header class="border-b border-gray-200 p-3 flex items-center gap-4 shrink-0">
+      <h1 class="font-semibold text-gray-900 text-sm shrink-0">Расписание</h1>
+      <div class="flex gap-1 bg-gray-100 rounded-md p-0.5">
+        <button
+          v-for="p in [
+            { value: 'schedule', label: 'Расписание' },
+            { value: 'references', label: 'Справочники' },
+          ]"
+          :key="p.value"
+          class="px-3 py-1 text-sm rounded transition-colors"
+          :class="
+            page === p.value
+              ? 'bg-white shadow-sm text-gray-900 font-medium'
+              : 'text-gray-500 hover:text-gray-800'
+          "
+          @click="page = p.value"
+        >
+          {{ p.label }}
+        </button>
+      </div>
+      <template v-if="page === 'schedule'">
+        <div class="flex gap-1 bg-gray-100 rounded-md p-0.5">
+          <button
+            v-for="mode in [
+              { value: 'group', label: 'По группам' },
+              { value: 'room', label: 'По аудиториям' },
+              { value: 'teacher', label: 'По преподавателям' },
+            ]"
+            :key="mode.value"
+            class="px-3 py-1 text-sm rounded transition-colors"
+            :class="
+              store.viewMode === mode.value
+                ? 'bg-white shadow-sm text-gray-900 font-medium'
+                : 'text-gray-500 hover:text-gray-800'
+            "
+            @click="store.setViewMode(mode.value)"
+          >
+            {{ mode.label }}
+          </button>
+        </div>
+        <EntitySearch
+          v-model="store.selectedId"
+          :options="store.entityOptions"
+          :placeholder="searchPlaceholder"
+        />
+        <button
+          class="ml-auto px-3 py-1.5 text-sm rounded-md bg-gray-900 text-white hover:bg-gray-700 disabled:opacity-50 shrink-0"
+          :disabled="generating"
+          @click="onAutoGenerate"
+        >
+          {{ generating ? 'Составляю…' : 'Составить автоматически' }}
+        </button>
+      </template>
+    </header>
+    <PublishSchedule />
+
+    <div v-if="store.error" class="bg-red-50 text-red-700 text-sm px-3 py-2 border-b border-red-200">
+      {{ store.error }}
+    </div>
+    <div v-else-if="store.info" class="bg-blue-50 text-blue-700 text-sm px-3 py-2 border-b border-blue-200">
+      {{ store.info }}
+    </div>
+
+    <AutoGenerateReport v-if="page === 'schedule'" />
+
+    <div v-if="page === 'schedule'" class="flex flex-1 min-h-0">
+      <LoadPool />
+      <ScheduleGrid @drop-request="onDropRequest" />
+    </div>
+    <ReferencesView v-else />
+
+    <RoomPickerModal :request="modalRequest" @close="closeModal" />
+  </div>
+</template>

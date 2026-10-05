@@ -1,0 +1,8 @@
+services:
+  gateway:
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile.server:/etc/caddy/Caddyfile:ro

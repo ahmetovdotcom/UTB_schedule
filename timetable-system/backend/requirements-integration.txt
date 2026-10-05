@@ -1,0 +1,4 @@
+-r requirements-dev.txt
+asyncpg>=0.31
+pydantic-settings>=2.0
+pillow>=12.0

@@ -1,0 +1,8 @@
+okak.asia {
+	encode zstd gzip
+	reverse_proxy student-web:80
+}
+app.okak.asia {
+	encode zstd gzip
+	reverse_proxy staff-web:80
+}
